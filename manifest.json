@@ -1,0 +1,51 @@
+{
+    "manifest_version": 2,
+    "name": "Mock Extensions",
+    "description": "My First Web Mock Extensions",
+    "version": "1.0",
+    "permissions": [
+        "notifications",
+        "tabs",
+        "cookies",
+        "webRequest",
+        "storage",
+        "webRequestBlocking",
+        "https://movie.douban.com/*",
+        "https://*.lkcoffee.com/*",
+        "*://www.baidu.com/*",
+        "http://4947c105.r7.vip.cpolar.cn/upload",
+        "activeTab",
+        "<all_urls>"
+    ],
+    "browser_action": {
+        "default_popup": "popup/popup.html",
+        "default_icon": "icons/index.png",
+        "default_title": "Mock Extensions Title"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://lkcoffee.com/*",
+                "https://movie.douban.com/*",
+                "*://www.baidu.com/*",
+                "http://4947c105.r7.vip.cpolar.cn/upload",
+                "<all_urls>"
+            ],
+            "css": [
+                "content/index.css"
+            ],
+            "js": [
+                "content/content.js"
+            ]
+        }
+    ],
+    "background": {
+        "scripts": [
+            "background/service_worker.js"
+        ],
+        "persistent": true
+    },
+    "web_accessible_resources": [
+        "mocks/*"
+    ]
+}

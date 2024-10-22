@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./index.css">
+</head>
+
+<body>
+    <div class="main">
+
+        <button class="confirmMock">
+            进行mock
+        </button>
+        <div class="backContent">
+            <!-- 标题 -->
+            <p class="backP">已经保存的Mock接口</p>
+            <!-- 导航栏 -->
+            <ul class="backTitle">
+                <li>是否开启</li>
+                <li>接口名称</li>
+                <li>接口地址</li>
+                <li>操作</li>
+                <li></li>
+            </ul>
+            <!-- 很多条mock接口 -->
+            <div class="backDiv">
+                <!-- 每一条mock接口 -->
+                <div class="backMockInfo">
+
+                </div>
+            </div>
+        </div>
+        <button class="openPopup">
+            添加mock接口
+        </button>
+        <div class="popup">
+            <!-- <input type="text" placeholder="Enter your text"> -->
+            <div class="popupTitle">
+                <h3>添加mock接口</h3>
+            </div>
+            <div class="popupMockContent">
+                <input type="text" placeholder="请输入要mock的api" class="mockApi">
+                <input type="text" placeholder="请输入要mock次数" class="mockTimes">
+                <textarea rows="5" cols="30" placeholder="请输入想要的数据内容" class="mockDataContent"></textarea>
+            </div>
+            <div class="saveAndCancelBtn">
+                <button class="savePopupBtn">
+                    保存
+                </button>
+                <button class="cancelPopupBtn">
+                    关闭
+                </button>
+
+            </div>
+
+        </div>
+    </div>
+    <!-- Button to trigger the popup -->
+    <!-- Popup with an input field -->
+
+
+
+</body>
+<script src="./popup.js"></script>
+
+</html>

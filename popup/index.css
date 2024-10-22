@@ -1,0 +1,49 @@
+.main{
+    height:500px;
+    width: 700px;
+    background-color: gray;
+    display: flex;
+    flex-direction: column;
+}
+.confirmMock{
+    /* background-color: ; */
+    height: 50px;
+}
+.mockTimes{
+    height: 30px;
+}
+.mockApi{
+    height: 30px;
+}
+.mockDataContent{
+    height: 100px;
+}
+.backContent{
+    width: 100%;
+    height: 100%;
+    background-color: beige;
+}
+.backP{
+
+}
+.backDiv{
+
+}
+.popup {
+    display: none;
+    position: fixed;
+    width: 400px;
+    height: 400px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgb(220, 245, 230);
+}
+.popupMockContent{
+    display: flex;
+    flex-direction: column;
+}
+.backTitle{
+    display: flex;
+    justify-content: space-between;
+}

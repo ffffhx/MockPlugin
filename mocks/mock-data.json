@@ -1,0 +1,8 @@
+{
+    "http://4947c105.r7.vip.cpolar.cn/api/robots?page=1&per_page=9999": {
+        "file": "mocks/test.json"
+    },
+    "http://4947c105.r7.vip.cpolar.cn/api/getCameraIdAndNumberByRoad": {
+        "file": "mocks/test.json"
+    }
+}

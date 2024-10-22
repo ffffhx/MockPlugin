@@ -1,0 +1,22 @@
+{
+    "data": [
+        {
+            "cameraId": "C313333",
+            "cameraNumber": 1
+        },
+        {
+            "cameraId": "C332",
+            "cameraNumber": 2
+        },
+        {
+            "cameraId": "C333",
+            "cameraNumber": 3
+        },
+        {
+            "cameraId": "C375",
+            "cameraNumber": 4
+        }
+    ],
+    "test2": "test2",
+    "test3": "test3"
+}

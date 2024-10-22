@@ -1,0 +1,16 @@
+#cj_move_page{
+    width: 400px;
+    user-select: none;//用户无法通过点击，拖动或者双击来选中该元素的文本内容
+    background-color: white;
+    border: 1px solid;
+    height: 400px;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+}
+#cj_move_h3{
+    text-align: center;
+    line-height: 40px;
+    cursor: move;
+}

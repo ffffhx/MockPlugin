@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <button class="test">
+        点击
+    </button>
+</body>
+<script type="module" src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.js">
+    import { saveAs } from 'file-saver';
+    console.log(typeof saveAs); // 1
+    // var file = new File(["Hello, world!"], "hello world.txt", { type: "text/plain;charset=utf-8" });
+    // FileSaver.saveAs(file);
+    // console.log(file, 'file');
+    var myHeaders = new Headers();
+    myHeaders.append("User-Agent", "Apifox/1.0.0 (https://apifox.com)");
+
+    var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+    };
+    document.querySelector('.test').addEventListener('click', () => {
+        fetch("http://ajax-api.itheima.net/api/province", requestOptions)
+            .then(response => response.text())
+            .then(result => console.log(result))
+            .catch(error => console.log('error', error));
+        console.log('点击了');
+
+    })
+
+</script>
+
+</html>
