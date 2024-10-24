@@ -22,29 +22,31 @@
                 <li>是否开启</li>
                 <li>接口名称</li>
                 <li>接口地址</li>
+                <li>mock次数</li>
                 <li>操作</li>
-                <li></li>
+                <li>Id</li>
             </ul>
-            <!-- 很多条mock接口 -->
-            <div class="backDiv">
-                <!-- 每一条mock接口 -->
-                <div class="backMockInfo">
-
-                </div>
+            <!-- 每一条mock接口 -->
+            <div class="backMockInfo">
+                <!-- 里面是js动态生成的好多ul标签 -->
             </div>
         </div>
         <button class="openPopup">
             添加mock接口
         </button>
+
+        <!-- 用来添加mock的弹窗 -->
         <div class="popup">
             <!-- <input type="text" placeholder="Enter your text"> -->
             <div class="popupTitle">
                 <h3>添加mock接口</h3>
             </div>
-            <div class="popupMockContent">
-                <input type="text" placeholder="请输入要mock的api" class="mockApi">
+            <div class="popupMockContentForm">
+                <input type="text" placeholder="是否开启" class="ifOpen">
+                <input type="text" placeholder="请输入对应接口名称" class="mockName">
+                <input type="text" placeholder="请输入要mock的url" class="mockUrl">
                 <input type="text" placeholder="请输入要mock次数" class="mockTimes">
-                <textarea rows="5" cols="30" placeholder="请输入想要的数据内容" class="mockDataContent"></textarea>
+                <textarea rows="5" cols="30" placeholder="请输入想要返回的响应数据内容" class="mockResponse"></textarea>
             </div>
             <div class="saveAndCancelBtn">
                 <button class="savePopupBtn">
@@ -53,10 +55,35 @@
                 <button class="cancelPopupBtn">
                     关闭
                 </button>
-
             </div>
-
         </div>
+
+
+
+        <!-- 用来修改对应mock  以及展示详细信息的弹窗 -->
+        <div class="liUp">
+            <div class="popupTitle">
+                <h3>修改mock接口</h3>
+            </div>
+            <div class="popupMockContentForm">
+                <input type="text" placeholder="请输入对应接口名称" class="changeMockName">
+                <input type="text" placeholder="请输入要mock的url" class="changeMockUrl">
+                <input type="text" placeholder="请输入要mock次数" class="changeMockTimes">
+                <textarea rows="5" cols="30" placeholder="请输入想要返回的响应数据内容" class="changeMockResponse"></textarea>
+            </div>
+            <div class="saveAndCancelBtn">
+                <button class="saveLiUpBtn">
+                    修改
+                </button>
+                <button class="cancelLiUpBtn">
+                    关闭
+                </button>
+                <button class="deleteLiUpBtn">
+                    删除
+                </button>
+            </div>
+        </div>
+
     </div>
     <!-- Button to trigger the popup -->
     <!-- Popup with an input field -->
@@ -64,6 +91,7 @@
 
 
 </body>
-<script src="./popup.js"></script>
+<!-- <script type='text/javascript' charset='utf-8' src="../FileSaver.js"></script> -->
+<script type='text/javascript' charset='utf-8' src="./popup.js"></script>
 
 </html>

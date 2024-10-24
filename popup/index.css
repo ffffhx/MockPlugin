@@ -9,13 +9,21 @@
     /* background-color: ; */
     height: 50px;
 }
+.ifOpen{
+    height: 30px;
+}
+/* 接口名称 */
+.mockName{
+    height: 30px;
+}
+/* mock的次数 */
 .mockTimes{
     height: 30px;
 }
-.mockApi{
+.mockUrl{
     height: 30px;
 }
-.mockDataContent{
+.mockResponse{
     height: 100px;
 }
 .backContent{
@@ -23,12 +31,7 @@
     height: 100%;
     background-color: beige;
 }
-.backP{
 
-}
-.backDiv{
-
-}
 .popup {
     display: none;
     position: fixed;
@@ -37,13 +40,26 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    background-color: rgb(220, 245, 230);
+    background-color: rgb(255, 255, 250);
 }
-.popupMockContent{
+.popupMockContentForm{
     display: flex;
     flex-direction: column;
 }
+.liUp{
+    display: none;
+    position: fixed;
+    width: 400px;
+    height: 400px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgb(250, 245, 230);
+}
+li{
+    list-style: none;
+}
 .backTitle{
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
 }
