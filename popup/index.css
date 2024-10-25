@@ -7,24 +7,33 @@
 }
 .confirmMock{
     /* background-color: ; */
+    cursor: pointer;
     height: 50px;
 }
 .ifOpen{
     height: 30px;
+    margin-bottom: 5px;
 }
 /* 接口名称 */
 .mockName{
     height: 30px;
+    margin-bottom: 5px;
 }
 /* mock的次数 */
 .mockTimes{
     height: 30px;
+    margin-bottom: 5px;
+
 }
 .mockUrl{
     height: 30px;
+    margin-bottom: 5px;
+
 }
 .mockResponse{
     height: 100px;
+    margin-bottom: 5px;
+
 }
 .backContent{
     width: 100%;
@@ -62,4 +71,23 @@ li{
 .backTitle{
     display: flex;
     justify-content: space-around;
+}
+.operateLi{
+    cursor: pointer;
+}
+/* .saveAndCancelBtn{
+    cursor: pointer;
+} */
+.deleteLiUpBtn, .changeMockStateBtn, .addTimesBtn, .closeLiUpBtn{
+    cursor: pointer;
+}
+.closeLiUpBtn{
+    width: 60px;
+    height: 22px;
+}
+.popupTitle{
+    cursor: pointer;
+}
+.liUpMockContentChange{
+    margin-left: 15px;
 }

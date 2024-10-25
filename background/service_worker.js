@@ -4,6 +4,7 @@ console.log('进入了service worker');
 let modifyResponseEnabled = false;
 
 
+
 // 更新数据  和增加数据几乎一样，只是把add换成了put
 function updateData(db, storeName, data) {
     const request = db.transaction([storeName], 'readwrite')
@@ -17,6 +18,58 @@ function updateData(db, storeName, data) {
     };
 }
 
+// 用于创建或者打开数据库的函数 第一个参数是数据库名称  第二个参数是表名称 第三个参数是版本号
+function openDB(dbName, storeName, version = 1) {
+    return new Promise((resolve, reject) => {
+        let db
+        // 打开数据库，如果没有那就创建
+        const request = indexedDB.open(dbName, version);
+        // 数据库打开成功的回调函数
+        request.onsuccess = function (event) {
+            db = event.target.result; //db就是数据库对象
+            console.log('数据仓库打开成功');
+            resolve(db);
+        };
+        // 数据库打开失败的回调函数
+        request.onerror = function (event) {
+            console.log('数据库打开失败');
+
+        };
+        // 数据库版本更新的回调函数   (版本号有更新才会触发这个更新时候的回调函数)   当数据库不存在（首次创建数据库的时候）也会触发
+        request.onupgradeneeded = function (event) {
+            console.log('数据仓库版本更新');
+            db = event.target.result;//数据库对象
+            // 创建存储库  第一个才参数代表需要创建的存储库的名称
+            // 第二个参数是配置对象，keyPath: 'url' 表示这个存储中的每个记录都有一个主键： url
+            const objectStore = db.createObjectStore(storeName, { keyPath: 'urlId', autoIncrement: true });
+            console.log('数据仓库版本更新成功');
+            // 创建索引   如果不创建索引，只能通过主键  创建了三个索引，同时也意味着插入数据的时候这三个索引不得为空，必须有数据
+            // objectStore.createIndex('urlId', 'urlId', { unique: true , autoIncrement: true}); //不可重复  主键是不可重复的  自增
+            objectStore.createIndex('ifOpen', 'ifOpen', { unique: false }); //可以重复 是否开启这个接口
+            objectStore.createIndex('mockName', 'mockName', { unique: false }); //这个接口的名称是什么
+            objectStore.createIndex('mockUrl', 'mockUrl', { unique: false }); //这个接口的url是什么
+            objectStore.createIndex('mockTimes', 'mockTimes', { unique: false }); //mock几次
+            objectStore.createIndex('responseData', 'responseData', { unique: false }); //想要的响应值是什么
+        };
+    })
+}
+
+
+// 实际就是修改信息
+async function upDate(elementToEdit) {
+    let data = {
+        urlId: elementToEdit.urlId,
+        ifOpen: !elementToEdit.ifOpen,
+        mockName: elementToEdit.mockName,
+        mockUrl: elementToEdit.mockUrl,
+        mockTimes: elementToEdit.mockTimes,
+        responseData: elementToEdit.responseData,
+    }
+    await openDB('mockDataBase', 'mockDataStore', 1).then((db) => {
+        db = db // 将数据库对象赋值给db
+        updateData(db, 'mockDataStore', data);//插入数据
+    });
+}
 
 
 
@@ -56,7 +109,7 @@ const preloadDataFromIndexedDB = () => {
             
             result.forEach(item => {
                 cachedMockData.push(item)
-                console.log('cachedMockData',cachedMockData);
+                // console.log('cachedMockData',cachedMockData);
                 
             });
             
@@ -75,29 +128,26 @@ chrome.webRequest.onBeforeRequest.addListener(
         // 如果进行了拦截
         if(modifyResponseEnabled){
             const url = details.url;
-            // 从预加载的 cachedMockData 中查找数据
-            // console.log('进入了请求拦截器',cachedMockData);
-            
-            // console.log(cachedMockData[url],'cachedMockData[url]');
-            // console.log(cachedMockData.responseData,'cachedMockData.responseData');
-            
-            // if(modifyResponseEnabled){
-    
-            // }
             for(let i=0;i<cachedMockData.length;i++){
                 // 如果开启
                 if(cachedMockData[i].ifOpen){
                     if(cachedMockData[i].mockUrl === url){
                         console.log(cachedMockData[i].responseData,'cachedMockData[i].responseData');
-                        // if(cachedMockData[i].mockTimes > 0){
-                        //     cachedMockData[i].mockTimes--
+                        if(cachedMockData[i].mockTimes > 0){
+                            cachedMockData[i].mockTimes--
+                            upDate(cachedMockData[i])
+                            console.log('剩余次数',cachedMockData[i].mockTimes);
+                            console.log('数据更新成功');
+                            
                             // 然后要在数据库里面更新一下
                             return {
+                                // data:application/json是 dataUrl的前缀，表示MIME类型
+                                // encodeURIComponent(cachedMockData[i].responseData)// 解释: 这里使用了 encodeURIComponent 来对数据进行 URL 编码，将数据中的特殊字符（例如空格、冒号、逗号等）转换为可以安全用于 URL 的格式。
                                 redirectUrl: 'data:application/json,' + encodeURIComponent(cachedMockData[i].responseData)
                             };
-                        // }else{
-                        //     return null
-                        // }
+                        }else{
+                            return null
+                        }
                     }
                 }else{
                     console.log('该条请求未开启拦截');

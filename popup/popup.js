@@ -17,31 +17,65 @@ const changeMockTimes = document.querySelector('.changeMockTimes')
 const changeMockResponse = document.querySelector('.changeMockResponse')
 const deleteLiUpBtn = document.querySelector('.deleteLiUpBtn')
 const liUp = document.querySelector('.liUp')
-const cancelLiUpBtn = document.querySelector('.cancelLiUpBtn')
+const closeLiUpBtn = document.querySelector('.closeLiUpBtn')
+const changeMockStateBtn = document.querySelector('.changeMockStateBtn')
+const liUpMockContentChange = document.querySelector('.liUpMockContentChange')
+const addTimesBtn = document.querySelector('.addTimesBtn')
 let db; //声明一个数据库对象
 let mockInfo = []; //这个用来存储数据库中的数据
 let allValid = true;
 
+let elementToEdit = {};
 
 
 
 // 给表单添加上提交事件，如果点击form表单里面的提交按钮，就会执行这个函数
+
+
+function validateIfNull() {
+
+}
+
+
 
 // 表单校验的函数
 function validatePopupForm() {
     console.log('执行了validatePopupForm');
     // 获取所有需要验证的元素
     const inputs = document.querySelectorAll('.ifOpen, .mockName, .mockUrl, .mockTimes, .mockResponse');
+    // 验证是否为空
     inputs.forEach(input => {
-        // trim() 只会删除字符串两端的空白字符，不会影响中间的内容。
+        // trim() 只会删除字符串两端的空白字符，不会影响中间的内容。  先判断是否都输入了
         if (!input.value.trim()) {
             allValid = false;
-            input.style.border = '2px solid red'; // 高亮未填充的输入框
+            input.style.border = '1px solid red'; // 高亮未填充的输入框
+            return
         } else {
             input.style.border = ''; // 清除高亮
         }
     });
+    // 细节的验证  比如必须是true或者false之类的
+    validateDetails()
 }
+
+function validateDetails() {
+    const parsedValue = Number(mockTimesInput.value);
+    if (!(ifOpenInput.value === 'true' || ifOpenInput.value === 'false')) {
+        alert('必须填写true或者false');
+        allValid = false
+        ifOpenInput.style.border = '1px solid red'; // 高亮未填充的输入框
+        return
+    }
+    if (isNaN(parsedValue)) {
+        alert('必须填写数字')
+        allValid = false
+        mockTimesInput.style.border = '1px solid red'; // 高亮未填充的输入框
+        return
+    }
+    allValid = true
+}
+
+
 
 // 用于创建或者打开数据库的函数 第一个参数是数据库名称  第二个参数是表名称 第三个参数是版本号
 function openDB(dbName, storeName, version = 1) {
@@ -128,7 +162,7 @@ function fetchData(db) {
             const mockInfo = [];
             result.forEach(item => {
                 mockInfo.push(item);
-                console.log('mockInfo', mockInfo);
+                // console.log('mockInfo', mockInfo);
             });
 
             resolve(mockInfo); // 返回获取的数据
@@ -193,19 +227,80 @@ function cancelPopup() {
 }
 cancelPopupBtn.addEventListener('click', cancelPopup);
 
+function handleAddTimesClick() {
+    console.log('1111111');
+    addTimes(elementToEdit);
+    // 删除之后重新加载数组里面的东西
+    preloadDataFromIndexedDB().then(() => { });
+}
+
+
+// 给删除按钮添加点击事件  点击之后将该元素删除
+deleteLiUpBtn.addEventListener('click', handleDeleteClick)
+
+// 给修改按钮添加点击事件  如果打开，点击之后就关闭，如果关闭，点击之后就打开
+changeMockStateBtn.addEventListener('click', handleChangeStateClick)
+
+// 给关闭按钮添加点击事件
+closeLiUpBtn.addEventListener('click', handleCloseClick);
+
+// 给增加次数按钮绑定事件
+addTimesBtn.addEventListener('click', handleAddTimesClick)
+
+
+function handleCloseClick() {
+    console.log('1');
+    hiddenLiUp()
+    console.log(elementToEdit, 'elementHanlde');
+
+}
+
+// 删除一条数据的函数
+function handleDeleteClick() {
+    console.log('1111111');
+
+    // 删除数据
+    deLete(elementToEdit.urlId);
+    // 删除之后重新加载数组里面的东西
+    preloadDataFromIndexedDB().then(() => {
+        // 关闭弹窗
+        hiddenLiUp()
+    }
+    )
+}
+
+
+//  修改开启状态的函数
+function handleChangeStateClick() {
+    console.log('执行了关闭的函数');
+
+    console.log(elementToEdit, 'elementelementelementelementelementelement');
+    // 实际上是新增加了一个mock数据
+    upDate(elementToEdit)
+    // // deLete(element.urlId);将原先的mock数据删除掉
+    preloadDataFromIndexedDB().then(() => {
+        // 关闭弹窗
+        hiddenLiUp()
+    })
+}
+
+
 // 创建ul标签和li标签的函数
 function createUlNdLi() {
+
     // map循环创建li元素
     backMockInfo.innerHTML = '';
     for (let index = 0; index < mockInfo.length; index++) {
         // 每一个element对象都是一个mock的详细数据
         const element = mockInfo[index];
+        const keys = Object.keys(element).sort();
         // 创建li元素
         const lis = Object.values(element).map((item, index) => {
             if (index === 4) {
                 return `<li class="operateLi">详细</li>`
+            } else {
+                return `<li>${element[keys[index]]}</li>`;
             }
-            return `<li>${item}</li>`;
         });
         // 创建ul元素并且添加名称
         const oneMockportUl = document.createElement('ul');
@@ -214,32 +309,91 @@ function createUlNdLi() {
         oneMockportUl.innerHTML = lis.join('');
         // 将ul添加到backMockInfo
         backMockInfo.appendChild(oneMockportUl);
-        // 在创建标签的时候就把需要添加的给添加上去
+
+
+
+        // 将相应内容添加到页面上
+        function addResponseInnerHTML() {
+            liUpMockContentChange.innerHTML = '';
+            liUpMockContentChange.innerHTML = element.responseData
+        }
+        addResponseInnerHTML()
+
+        // 给详细按钮添加点击事件  点击之后给弹出的详情页的三个按钮也会添加点击事件
         oneMockportUl.querySelector('.operateLi').addEventListener('click', () => {
+            elementToEdit = element;
             // 打开弹窗
             openLiUp();
-            console.log(element.urlId, 'element.urlId');
-            // 给删除按钮添加点击事件  点击之后将该元素删除
-            deleteLiUpBtn.addEventListener('click', () => {
-                deLete(element.urlId);
-                console.log(mockInfo, 'mockInfoBefore');
-                // 删除之后重新加载数组里面的东西
-                preloadDataFromIndexedDB().then(() => {
-                    console.log(mockInfo, 'mockInfoAfter')
-                    hiddenLiUp()
-                }
-                )
-            })
-
         })
+        // oneMockportUl.querySelector('.operateLi').removeEventListener('click', () => {
+        //     // 打开弹窗
+        //     openLiUp();
+        //     // 给删除按钮添加点击事件  点击之后将该元素删除
+        //     deleteLiUpBtn.removeEventListener('click', handleDeleteClick);
+        //     deleteLiUpBtn.addEventListener('click', handleDeleteClick)
 
+        //     // 给修改按钮添加点击事件  如果打开，点击之后就关闭，如果关闭，点击之后就打开
+        //     changeMockStateBtn.removeEventListener('click', handleChangeStateClick);
+        //     changeMockStateBtn.addEventListener('click', handleChangeStateClick)
+
+        //     // 给关闭按钮添加点击事件
+        //     closeLiUpBtn.removeEventListener('click', handleCloseClick);
+        //     closeLiUpBtn.addEventListener('click', handleCloseClick)
+        // })
     }
-
-    // hiddenLiUp()
-
 }
-// 给取消按钮添加点击事件
-cancelLiUpBtn.addEventListener('click', hiddenLiUp);
+// 实际就是修改信息
+async function upDate(elementToEdit) {
+    let data = {
+        urlId: elementToEdit.urlId,
+        ifOpen: !elementToEdit.ifOpen,
+        mockName: elementToEdit.mockName,
+        mockUrl: elementToEdit.mockUrl,
+        mockTimes: elementToEdit.mockTimes,
+        responseData: elementToEdit.responseData,
+    }
+    await openDB('mockDataBase', 'mockDataStore', 1).then((db) => {
+        db = db // 将数据库对象赋值给db
+        updateData(db, 'mockDataStore', data);//插入数据
+    });
+}
+
+
+async function addTimes(elementToEdit) {
+    console.log(elementToEdit.mockTimes, 'elementToEdit');
+
+    elementToEdit.mockTimes++
+
+    let data = {
+        urlId: elementToEdit.urlId,
+        ifOpen: elementToEdit.ifOpen,
+        mockName: elementToEdit.mockName,
+        mockUrl: elementToEdit.mockUrl,
+        mockTimes: elementToEdit.mockTimes,
+        responseData: elementToEdit.responseData,
+    }
+    await openDB('mockDataBase', 'mockDataStore', 1).then((db) => {
+        db = db // 将数据库对象赋值给db
+        updateData(db, 'mockDataStore', data);//插入数据
+    });
+}
+
+
+// 更新数据  和增加数据几乎一样，只是把add换成了put
+function updateData(db, storeName, data) {
+    const request = db.transaction([storeName], 'readwrite')
+        .objectStore(storeName)
+        .put(data);//没有就增加，有则更新
+    request.onsuccess = function (event) {
+        console.log('数据更新成功');
+    };
+    request.onerror = function (event) {
+        console.log('数据更新失败');
+    };
+}
+
+
+
 // 将LiUp隐藏的函数
 function hiddenLiUp() {
     liUp.style.display = 'none';
@@ -263,9 +417,6 @@ async function inSert() {
         db = db // 将数据库对象赋值给db
         insertData(db, 'mockDataStore', data);//插入数据
     });
-    console.log();
-
-
 }
 // 删除数据的函数  传入urlId
 function deLete(id) {
@@ -280,11 +431,15 @@ function deLete(id) {
 function savePopup() {
     // 先进行表单校验
     validatePopupForm();
+    // 如果没有通过表单校验
     if (!allValid) {
+        console.log('没有通过表单校验，进入了if');
         console.log('所有字段必须都被填写', allValid);
-        alert('所有字段必须填写');
+        alert('请规范填写所有字段');
         return
     } else {
+        console.log('通过了表单校验，进入了else');
+
         // 插入数据
         inSert()
         // 更新数据
@@ -294,7 +449,6 @@ function savePopup() {
         // 关闭弹窗
         cancelPopup()
     }
-
 }
 savePopupBtn.addEventListener('click', savePopup);
 
