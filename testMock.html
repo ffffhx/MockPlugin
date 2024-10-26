@@ -11,26 +11,14 @@
     <button class="test">
         点击
     </button>
+    <button class="logNoUse">
+        无用的按钮，用来打印一些测试的东西
+    </button>
 </body>
-<!-- <script src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.js" ></script> -->
+
 <script type="module">
-    // console.log(saveAs, 'saveAs');
-    // console.log(123123);
-
-    // import { saveAs } from 'file-saver';
-    // console.log(typeof saveAs); // 1
-    // var file = new File(["Hello, world!"], "hello world.txt", { type: "text/plain;charset=utf-8" });
-    // FileSaver.saveAs(file);
-    // console.log(file, 'file');
-
-
-
     const myHeaders = new Headers();
     myHeaders.append("User-Agent", "Apifox/1.0.0 (https://apifox.com)");
-
-
-
-
     const requestOptions = {
         method: 'GET',
         headers: myHeaders,
@@ -45,7 +33,10 @@
             })
             .catch(error => console.log('error', error));
         console.log('点击了');
-
+    })
+    document.querySelector('.logNoUse').addEventListener('click', () => {
+        console.log('fgadshojnjlho');
+        
     })
 
 </script>

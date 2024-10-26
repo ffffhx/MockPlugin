@@ -37,7 +37,6 @@
 
         <!-- 用来添加mock的弹窗 -->
         <div class="popup">
-            <!-- <input type="text" placeholder="Enter your text"> -->
             <div class="popupTitle">
                 <h3>添加mock接口</h3>
             </div>
@@ -82,21 +81,18 @@
             </div>
             <p> 响应数据：</p>
             <div class="liUpMockContentChange">
-                <!-- <input type="text" placeholder="请输入修改后接口名称" class="changeMockName">
-                <input type="text" placeholder="请输入修改后的mockUrl" class="changeMockUrl">
-                <input type="text" placeholder="请输入修改后的mock次数" class="changeMockTimes">
-                <textarea rows="5" cols="30" placeholder="请输入想要修改的返回响应数据内容" class="changeMockResponse"></textarea> -->
+                <!-- 里面是js动态生成文件内容 -->
             </div>
         </div>
 
     </div>
-    <!-- Button to trigger the popup -->
-    <!-- Popup with an input field -->
+
 
 
 
 </body>
 <!-- <script type='text/javascript' charset='utf-8' src="../FileSaver.js"></script> -->
-<script type='text/javascript' charset='utf-8' src="./popup.js"></script>
+<script src="./handleIndexDBForPop.js"></script>
+<script src="./popup.js"></script>
 
 </html>

@@ -41,6 +41,7 @@
     ],
     "background": {
         "scripts": [
+            "background/handleIndexDBForBG.js",
             "background/service_worker.js"
         ],
         "persistent": true
