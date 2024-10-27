@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
-    "name": "Mock Extensions",
-    "description": "My First Web Mock Extensions",
+    "name": "爱你张驰主席",
+    "description": "等你()",
     "version": "1.0",
     "permissions": [
         "notifications",
@@ -20,7 +20,7 @@
     "browser_action": {
         "default_popup": "popup/popup.html",
         "default_icon": "icons/index.png",
-        "default_title": "Mock Extensions Title"
+        "default_title": "爱你张驰主席"
     },
     "content_scripts": [
         {

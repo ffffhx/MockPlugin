@@ -25,7 +25,7 @@ const addTimesBtn = document.querySelector('.addTimesBtn')
 const inputs = document.querySelectorAll('.ifOpen, .mockName, .mockUrl, .mockTimes, .mockResponse');
 
 
-let mockInfo = []; //这个用来存储数据库中的数据
+
 
 let allValid = true;//用来判断是否通过表单校验
 
@@ -71,8 +71,7 @@ function validatePopupForm() {
 }
 
 
-// 在插件启动时执行预加载
-preloadDataFromIndexedDB();
+
 
 
 
@@ -96,7 +95,8 @@ function addResponseInnerHTML(element) {
 
 // 创建ul标签和li标签的函数
 function createUlNdLi() {
-
+    console.log('mockInfo', mockInfo);
+    
     // map循环创建li元素
     backMockInfo.innerHTML = '';
     for (let index = 0; index < mockInfo.length; index++) {
@@ -141,7 +141,7 @@ async function upDate(elementToEdit) {
         mockTimes: elementToEdit.mockTimes,
         responseData: elementToEdit.responseData,
     }
-    updateData(db, 'mockDataStore', data);//更新数据
+    mockDb.updateData(data);//更新数据
 }
 
 
@@ -156,7 +156,7 @@ async function addTimes(elementToEdit) {
         mockTimes: elementToEdit.mockTimes,
         responseData: elementToEdit.responseData,
     }
-    updateData(db, 'mockDataStore', data);//更新数据
+    mockDb.updateData(data);//更新数据
 }
 
 
@@ -172,7 +172,7 @@ function handleAddTimesClick() {
 function handleChangeStateClick() {
     // 实际上是新增加了一个mock数据
     upDate(elementToEdit)
-    preloadDataFromIndexedDB().then(() => {
+    mockDb.preloadDataFromIndexedDB().then(() => {
         // 关闭弹窗
         hiddenLiUp()
     })
@@ -184,9 +184,9 @@ function handleChangeStateClick() {
 // 点击删除某条数据并且重新加载
 function handleDeleteClick() {
     // 删除数据
-    deleteData(elementToEdit.urlId);
+    mockDb.deleteByKey(elementToEdit.urlId);
     // 删除之后重新加载数组里面的东西
-    preloadDataFromIndexedDB().then(() => {
+    mockDb.preloadDataFromIndexedDB().then(() => {
         // 关闭弹窗
         hiddenLiUp()
     }
@@ -214,7 +214,7 @@ function savePopup() {
         // 插入一条Mock数据
         addInsert()
         // 重新预加载数据
-        preloadDataFromIndexedDB();
+        mockDb.preloadDataFromIndexedDB();
         // 创建更新li标签
         createUlNdLi()
         // 关闭弹窗

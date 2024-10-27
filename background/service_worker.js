@@ -22,12 +22,12 @@ class MockDBManager {
         this.storeName = storeName
         this.version = version
         this.db = null  //用来存储数据库实例
-        this.openDB().
-            then(db => {
-                console.log('数据库打开成功', db);
-            }).catch(error => {
-                console.log('数据库打开失败', error);
-            })
+        // 实例化这个对象的时候打开数据库，并且用.then确保数据仓库打开成功
+        this.openDB().then(() => {
+            console.log('数据库已准备好使用');
+        }).catch(error => {
+            console.error('打开数据库失败:', error);
+        });
     }
 
 
@@ -37,9 +37,34 @@ class MockDBManager {
             // 打开数据库，如果没有那就创建
             const request = indexedDB.open(this.dbName, this.version);
             // 数据库打开成功的回调函数
-            request.onsuccess = function (event) {
+            request.onsuccess = (event) => {
                 this.db = event.target.result; //db就是数据库对象
                 console.log('数据仓库打开成功');
+
+                // 在插件启动时执行预加载
+                chrome.runtime.onStartup.addListener(() => {
+                    mockDB.preloadDataFromIndexedDB();
+                    console.log('刷新了页面');
+
+                });
+                // 在插件安装完成后执行预加载
+                chrome.runtime.onInstalled.addListener(() => {
+                    mockDB.preloadDataFromIndexedDB();
+                    console.log('刷新了页面');
+
+                });
+
+                // 在插件每次刷新页面的时候执行预加载
+                chrome.tabs.onUpdated.addListener(
+                    function (tabId, changeInfo, tab) {
+                        if (changeInfo.status === 'complete') {
+                            mockDB.preloadDataFromIndexedDB();
+                            console.log('刷新了页面');
+
+                        }
+                    }
+                );
+
                 resolve(this.db);
             };
             // 数据库打开失败的回调函数
@@ -48,7 +73,7 @@ class MockDBManager {
                 reject(event.target.error);
             };
             // 数据库版本更新的回调函数   (版本号有更新才会触发这个更新时候的回调函数)   当数据库不存在（首次创建数据库的时候）也会触发
-            request.onupgradeneeded = function (event) {
+            request.onupgradeneeded = (event) => {
                 console.log('数据仓库版本更新');
                 this.db = event.target.result;//数据库对象
                 // 创建存储库  第一个才参数代表需要创建的存储库的名称
@@ -95,8 +120,9 @@ class MockDBManager {
             const request = objectStore.getAll();
 
             request.onsuccess = (event) => {
-                console.log('数据获取成功');
-                resolve(event.target.result);
+                console.log('数据获取成功', event.target.result);
+                mockInfo = event.target.result
+                resolve(mockInfo); // 返回获取的数据
             };
 
             request.onerror = (event) => {
@@ -105,6 +131,41 @@ class MockDBManager {
             };
         });
     }
+
+
+    // 更新数据
+    updateData() {
+        return new Promise((resolve, reject) => {
+            const request = this.db.transaction([this.storeName], 'readwrite')
+                .objectStore(this.storeName)
+                .put(this.data);//没有就增加，有则更新
+            request.onsuccess = (event) => {
+                console.log('更新数据成功');
+                resolve();
+            };
+            request.onerror = (event) => {
+                console.log('更新数据失败');
+                reject(event.target.error);
+            };
+        })
+
+    }
+
+    // 修改次数
+    changeTimes(elementToEdit) {
+        let data = {
+            urlId: elementToEdit.urlId,
+            ifOpen: elementToEdit.ifOpen,
+            mockName: elementToEdit.mockName,
+            mockUrl: elementToEdit.mockUrl,
+            mockTimes: elementToEdit.mockTimes,
+            responseData: elementToEdit.responseData,
+        }
+        updateData(db, 'mockDataStore', data);//更新数据
+    }
+
+
+
 }
 
 
@@ -131,37 +192,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
 })
 
-
-// // 更新数据
-// function updateData(db, storeName, data) {
-//     return new Promise((resolve, reject) => {
-//         const request = db.transaction([storeName], 'readwrite')
-//             .objectStore(storeName)
-//             .put(data);//没有就增加，有则更新
-//         request.onsuccess = function (event) {
-//             console.log('更新数据成功');
-//             resolve();
-//         };
-//         request.onerror = function (event) {
-//             console.log('更新数据失败');
-//             reject(event.target.error);
-//         };
-//     })
-
-// }
-
-// // 修改次数
-// function changeTimes(elementToEdit) {
-//     let data = {
-//         urlId: elementToEdit.urlId,
-//         ifOpen: elementToEdit.ifOpen,
-//         mockName: elementToEdit.mockName,
-//         mockUrl: elementToEdit.mockUrl,
-//         mockTimes: elementToEdit.mockTimes,
-//         responseData: elementToEdit.responseData,
-//     }
-//     updateData(db, 'mockDataStore', data);//更新数据
-// }
 
 
 
@@ -247,29 +277,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
 
 
-
-// 在插件启动时执行预加载
-chrome.runtime.onStartup.addListener(() => {
-    mockDB.preloadDataFromIndexedDB();
-    console.log('刷新了页面');
-
-});
-// 在插件安装完成后执行预加载
-chrome.runtime.onInstalled.addListener(() => {
-    mockDB.preloadDataFromIndexedDB();
-    console.log('刷新了页面');
-
-});
-// 在插件每次刷新页面的时候执行预加载
-chrome.tabs.onUpdated.addListener(
-    function (tabId, changeInfo, tab) {
-        if (changeInfo.status === 'complete') {
-            mockDB.preloadDataFromIndexedDB();
-            console.log('刷新了页面');
-
-        }
-    }
-);
 
 
 
