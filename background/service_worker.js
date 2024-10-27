@@ -3,6 +3,7 @@
 // Manifest V2 不支持 ES6 模块（如 import 和 export 语法）。
 
 
+
 console.log('进入了service worker');
 
 // 判断是否要开启拦截
@@ -12,7 +13,109 @@ let modifyResponseEnabled = false;
 let mockInfo = []
 
 // 声明一个全局的数据库对象
-let db
+// let db
+
+
+class MockDBManager {
+    constructor(dbName, storeName, version = 1) {
+        this.dbName = dbName
+        this.storeName = storeName
+        this.version = version
+        this.db = null  //用来存储数据库实例
+        this.openDB().
+            then(db => {
+                console.log('数据库打开成功', db);
+            }).catch(error => {
+                console.log('数据库打开失败', error);
+            })
+    }
+
+
+    // 打开数据库
+    openDB() {
+        return new Promise((resolve, reject) => {
+            // 打开数据库，如果没有那就创建
+            const request = indexedDB.open(this.dbName, this.version);
+            // 数据库打开成功的回调函数
+            request.onsuccess = function (event) {
+                this.db = event.target.result; //db就是数据库对象
+                console.log('数据仓库打开成功');
+                resolve(this.db);
+            };
+            // 数据库打开失败的回调函数
+            request.onerror = function (event) {
+                console.log('数据库打开失败');
+                reject(event.target.error);
+            };
+            // 数据库版本更新的回调函数   (版本号有更新才会触发这个更新时候的回调函数)   当数据库不存在（首次创建数据库的时候）也会触发
+            request.onupgradeneeded = function (event) {
+                console.log('数据仓库版本更新');
+                this.db = event.target.result;//数据库对象
+                // 创建存储库  第一个才参数代表需要创建的存储库的名称
+                // 第二个参数是配置对象，keyPath: 'url' 表示这个存储中的每个记录都有一个主键： url
+                this._createObjectStore();
+            };
+        })
+    }
+
+    // 创建存储库（创建表）
+    _createObjectStore() {
+        const objectStore = this.db.createObjectStore(this.storeName, { keyPath: 'urlId', autoIncrement: true });
+        console.log('数据仓库版本更新成功');
+        // 创建索引
+        objectStore.createIndex('ifOpen', 'ifOpen', { unique: false }); //可以重复 是否开启这个接口
+        objectStore.createIndex('mockName', 'mockName', { unique: false }); //这个接口的名称是什么
+        objectStore.createIndex('mockUrl', 'mockUrl', { unique: false }); //这个接口的url是什么
+        objectStore.createIndex('mockTimes', 'mockTimes', { unique: false }); //mock几次
+        objectStore.createIndex('responseData', 'responseData', { unique: false }); //想要的响应值是什么
+    }
+
+
+
+    preloadDataFromIndexedDB() {
+        return new Promise((resolve, reject) => {
+            this.fetchAllData()
+                .then(data => resolve(data))
+                .catch(error => {
+                    console.error('数据库打开失败:', error);
+                    reject(error);
+                });
+        });
+    }
+
+    // 获取所有数据
+    fetchAllData() {
+        return new Promise((resolve, reject) => {
+            if (!this.db) {
+                reject('数据库尚未打开');
+                return;
+            }
+            const transaction = this.db.transaction(this.storeName, 'readonly');
+            const objectStore = transaction.objectStore(this.storeName);
+            const request = objectStore.getAll();
+
+            request.onsuccess = (event) => {
+                console.log('数据获取成功');
+                resolve(event.target.result);
+            };
+
+            request.onerror = (event) => {
+                console.error('数据获取失败');
+                reject(event);
+            };
+        });
+    }
+}
+
+
+// 实例化这个类的时候会自动的打开数据库
+const mockDB = new MockDBManager('mockDataBase', 'mockDataStore', 1);
+
+
+
+
+
+
 
 
 
@@ -29,115 +132,131 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 })
 
 
-// 更新数据
-function updateData(db, storeName, data) {
-    return new Promise((resolve, reject) => {
-        const request = db.transaction([storeName], 'readwrite')
-            .objectStore(storeName)
-            .put(data);//没有就增加，有则更新
-        request.onsuccess = function (event) {
-            console.log('更新数据成功');
-            resolve();
-        };
-        request.onerror = function (event) {
-            console.log('更新数据失败');
-            reject(event.target.error);
-        };
-    })
+// // 更新数据
+// function updateData(db, storeName, data) {
+//     return new Promise((resolve, reject) => {
+//         const request = db.transaction([storeName], 'readwrite')
+//             .objectStore(storeName)
+//             .put(data);//没有就增加，有则更新
+//         request.onsuccess = function (event) {
+//             console.log('更新数据成功');
+//             resolve();
+//         };
+//         request.onerror = function (event) {
+//             console.log('更新数据失败');
+//             reject(event.target.error);
+//         };
+//     })
 
-}
+// }
 
-// 用于创建或者打开数据库的函数 第一个参数是数据库名称  第二个参数是表名称 第三个参数是版本号
-function openDB(dbName, storeName, version = 1) {
-    return new Promise((resolve, reject) => {
-        // 打开数据库，如果没有那就创建
-        const request = indexedDB.open(dbName, version);
-        // 数据库打开成功的回调函数
-        request.onsuccess = function (event) {
-            db = event.target.result; //db就是数据库对象
-            console.log('数据仓库打开成功');
-            resolve(db);
-        };
-        // 数据库打开失败的回调函数
-        request.onerror = function (event) {
-            console.log('数据库打开失败');
-        };
-        // 数据库版本更新的回调函数   (版本号有更新才会触发这个更新时候的回调函数)   当数据库不存在（首次创建数据库的时候）也会触发
-        request.onupgradeneeded = function (event) {
-            console.log('数据仓库版本更新');
-            db = event.target.result;//数据库对象
-            // 创建存储库  第一个才参数代表需要创建的存储库的名称
-            // 第二个参数是配置对象，keyPath: 'url' 表示这个存储中的每个记录都有一个主键： url
-            const objectStore = db.createObjectStore(storeName, { keyPath: 'urlId', autoIncrement: true });
-            console.log('数据仓库版本更新成功');
-            // 创建索引   如果不创建索引，只能通过主键  创建了三个索引，同时也意味着插入数据的时候这三个索引不得为空，必须有数据
-            // objectStore.createIndex('urlId', 'urlId', { unique: true , autoIncrement: true}); //不可重复  主键是不可重复的  自增
-            objectStore.createIndex('ifOpen', 'ifOpen', { unique: false }); //可以重复 是否开启这个接口
-            objectStore.createIndex('mockName', 'mockName', { unique: false }); //这个接口的名称是什么
-            objectStore.createIndex('mockUrl', 'mockUrl', { unique: false }); //这个接口的url是什么
-            objectStore.createIndex('mockTimes', 'mockTimes', { unique: false }); //mock几次
-            objectStore.createIndex('responseData', 'responseData', { unique: false }); //想要的响应值是什么
-        };
-    })
-}
+// // 修改次数
+// function changeTimes(elementToEdit) {
+//     let data = {
+//         urlId: elementToEdit.urlId,
+//         ifOpen: elementToEdit.ifOpen,
+//         mockName: elementToEdit.mockName,
+//         mockUrl: elementToEdit.mockUrl,
+//         mockTimes: elementToEdit.mockTimes,
+//         responseData: elementToEdit.responseData,
+//     }
+//     updateData(db, 'mockDataStore', data);//更新数据
+// }
 
 
 
 
-function changeTimes(elementToEdit) {
-    let data = {
-        urlId: elementToEdit.urlId,
-        ifOpen: elementToEdit.ifOpen,
-        mockName: elementToEdit.mockName,
-        mockUrl: elementToEdit.mockUrl,
-        mockTimes: elementToEdit.mockTimes,
-        responseData: elementToEdit.responseData,
-    }
-    updateData(db, 'mockDataStore', data);//更新数据
-}
-
-// 获取所有数据的函数
-function fetchAllData(db, storeName) {
-    return new Promise((resolve, reject) => {
-        const request = db.transaction([storeName], 'readwrite')
-            .objectStore(storeName)
-            .getAll();
-        request.onsuccess = function () {
-            const result = request.result; // 得到的所有数据
-            console.log(result, 'result');
-            mockInfo = result
-            resolve(mockInfo); // 返回获取的数据
-        };
-        request.onerror = function (event) {
-            reject('Failed to fetch data: ' + event.target.errorCode);
-        };
-    });
-}
 
 
 
+// // 用于创建或者打开数据库的函数 第一个参数是数据库名称  第二个参数是表名称 第三个参数是版本号
+// function openDB(dbName, storeName, version = 1) {
+//     return new Promise((resolve, reject) => {
+//         // 打开数据库，如果没有那就创建
+//         const request = indexedDB.open(dbName, version);
+//         // 数据库打开成功的回调函数
+//         request.onsuccess = function (event) {
+//             db = event.target.result; //db就是数据库对象
+//             console.log('数据仓库打开成功');
+//             resolve(db);
+//         };
+//         // 数据库打开失败的回调函数
+//         request.onerror = function (event) {
+//             console.log('数据库打开失败');
+//         };
+//         // 数据库版本更新的回调函数   (版本号有更新才会触发这个更新时候的回调函数)   当数据库不存在（首次创建数据库的时候）也会触发
+//         request.onupgradeneeded = function (event) {
+//             console.log('数据仓库版本更新');
+//             db = event.target.result;//数据库对象
+//             // 创建存储库  第一个才参数代表需要创建的存储库的名称
+//             // 第二个参数是配置对象，keyPath: 'url' 表示这个存储中的每个记录都有一个主键： url
+//             const objectStore = db.createObjectStore(storeName, { keyPath: 'urlId', autoIncrement: true });
+//             console.log('数据仓库版本更新成功');
+//             // 创建索引   如果不创建索引，只能通过主键  创建了三个索引，同时也意味着插入数据的时候这三个索引不得为空，必须有数据
+//             // objectStore.createIndex('urlId', 'urlId', { unique: true , autoIncrement: true}); //不可重复  主键是不可重复的  自增
+//             objectStore.createIndex('ifOpen', 'ifOpen', { unique: false }); //可以重复 是否开启这个接口
+//             objectStore.createIndex('mockName', 'mockName', { unique: false }); //这个接口的名称是什么
+//             objectStore.createIndex('mockUrl', 'mockUrl', { unique: false }); //这个接口的url是什么
+//             objectStore.createIndex('mockTimes', 'mockTimes', { unique: false }); //mock几次
+//             objectStore.createIndex('responseData', 'responseData', { unique: false }); //想要的响应值是什么
+//         };
+//     })
+// }
 
-// 预加载数据：这个函数的功能就是打开数据库，并且把数据拿出来
-const preloadDataFromIndexedDB = () => {
-    // 使用 openDB 函数
-    return openDB('mockDataBase', 'mockDataStore', 1)
-        .then(db => {
-            console.log('打开成功');
-            return fetchAllData(db, 'mockDataStore'); // 获取数据
-        })
-        .catch(error => {
-            console.error(error);
-        });
-};
+
+// // 预加载数据：这个函数的功能就是打开数据库，并且把数据拿出来
+// const preloadDataFromIndexedDB = () => {
+//     // 使用 openDB 函数
+//     return openDB('mockDataBase', 'mockDataStore', 1)
+//         .then(db => {
+//             console.log('打开成功');
+//             return fetchAllData(db, 'mockDataStore'); // 获取数据
+//         })
+//         .catch(error => {
+//             console.error(error);
+//         });
+// };
+
+
+
+
+// // 获取所有数据的函数
+// function fetchAllData(db, storeName) {
+//     return new Promise((resolve, reject) => {
+//         const request = db.transaction([storeName], 'readwrite')
+//             .objectStore(storeName)
+//             .getAll();
+//         request.onsuccess = function () {
+//             const result = request.result; // 得到的所有数据
+//             console.log(result, 'result');
+//             mockInfo = result
+//             resolve(mockInfo); // 返回获取的数据
+//         };
+//         request.onerror = function (event) {
+//             reject('Failed to fetch data: ' + event.target.errorCode);
+//         };
+//     });
+// }
+
+
+
+
+
+
+
+
+
+
+
 // 在插件启动时执行预加载
 chrome.runtime.onStartup.addListener(() => {
-    preloadDataFromIndexedDB();
+    mockDB.preloadDataFromIndexedDB();
     console.log('刷新了页面');
 
 });
 // 在插件安装完成后执行预加载
 chrome.runtime.onInstalled.addListener(() => {
-    preloadDataFromIndexedDB();
+    mockDB.preloadDataFromIndexedDB();
     console.log('刷新了页面');
 
 });
@@ -145,7 +264,7 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.tabs.onUpdated.addListener(
     function (tabId, changeInfo, tab) {
         if (changeInfo.status === 'complete') {
-            preloadDataFromIndexedDB();
+            mockDB.preloadDataFromIndexedDB();
             console.log('刷新了页面');
 
         }
