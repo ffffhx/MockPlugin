@@ -1,5 +1,5 @@
 // 用于处理数据库的js文件，为popup.js服务
-let db; //声明一个数据库对象
+let db; //声明一个全局的数据库对象
 // 用于创建或者打开数据库的函数 第一个参数是数据库名称  第二个参数是表名称 第三个参数是版本号
 function openDB(dbName, storeName, version = 1) {
     return new Promise((resolve, reject) => {
@@ -16,7 +16,7 @@ function openDB(dbName, storeName, version = 1) {
             console.log('数据库打开失败');
 
         };
-        // 数据库版本更新的回调函数   (版本号有更新才会触发这个更新时候的回调函数)   当数据库不存在（首次创建数据库的时候）也会触发
+        // 数据库版本更新的回调函数(版本号有更新才会触发这个更新时候的回调函数)。 当数据库不存在（首次创建数据库的时候）也会触发
         request.onupgradeneeded = function (event) {
             console.log('数据仓库版本更新');
             db = event.target.result;//数据库对象
@@ -38,20 +38,19 @@ function openDB(dbName, storeName, version = 1) {
 
 // 插入数据  第一个参数是db实例   第二个参数是表名  第三个参数是要插入的数据（必须要存在索引的几个键值对）
 function addData(db, storeName, data) {
-    //  request是事务对象
-    const request = db.transaction([storeName], 'readwrite')  //   指定表格名称和操作格式 第一个参数是表名  第二个参数是操作模式
-        .objectStore(storeName) //仓库对象  （表对象）
-        .add(data);
-
-    // 成功回调函数  数据插入成功的时候会调用
-    request.onsuccess = function (event) {
-        console.log('数据插入成功');
-    };
-
-    // 失败回调函数
-    request.onerror = function (event) {
-        console.log('数据插入失败', event.target.error.name, event.target.error.message);
-    };
+    return new Promise((resolve, reject) => {
+        const request = db.transaction([storeName], 'readwrite')
+            .objectStore(storeName)
+            .add(data);
+        request.onsuccess = function () {
+            console.log('数据插入成功');
+            resolve();
+        };
+        request.onerror = function (event) {
+            console.log('数据插入失败', event.target.error.name, event.target.error.message);
+            reject(event.target.error);
+        };
+    });
 }
 
 
@@ -61,24 +60,12 @@ function fetchAllData(db, storeName) {
         const request = db.transaction([storeName], 'readwrite')
             .objectStore(storeName)
             .getAll();
-
-        // const transaction = db.transaction('mockDataStore', 'readonly');
-        // const objectStore = transaction.objectStore('mockDataStore');
-        // const request = objectStore.getAll();
-
         request.onsuccess = function () {
             const result = request.result; // 得到的所有数据
             console.log(result, 'result');
-
-            const mockInfo = [];
-            result.forEach(item => {
-                mockInfo.push(item);
-                // console.log('mockInfo', mockInfo);
-            });
-
+            mockInfo = result
             resolve(mockInfo); // 返回获取的数据
         };
-
         request.onerror = function (event) {
             reject('Failed to fetch data: ' + event.target.errorCode);
         };
@@ -92,7 +79,7 @@ function deleteByKey(db, storeName, key) {
         .objectStore(storeName)
         .delete(key);
     request.onsuccess = function (event) {
-        console.log('数据删除成功');
+        console.log('数据删除成功', event.target);
     };
     request.onerror = function (event) {
         console.log('数据删除失败');
@@ -105,7 +92,8 @@ function updateData(db, storeName, data) {
         .objectStore(storeName)
         .put(data);//没有就增加，有则更新
     request.onsuccess = function (event) {
-        console.log('数据更新成功');
+        console.log('数据更新成功', event.target);
+        preloadDataFromIndexedDB()
     };
     request.onerror = function (event) {
         console.log('数据更新失败');
@@ -140,8 +128,7 @@ function preloadDataFromIndexedDB() {
             return fetchAllData(db, 'mockDataStore'); // 获取数据
         })
         .then(res => {
-            mockInfo = res;
-            console.log('预缓存成功');
+            console.log(res, 'res');
             createUlNdLi()
         })
         .catch(error => {
@@ -154,8 +141,5 @@ function preloadDataFromIndexedDB() {
 
 // 删除数据的函数
 function deleteData(id) {
-    openDB('mockDataBase', 'mockDataStore', 1).then((db) => {
-        db = db // 将数据库对象赋值给db
-        deleteByKey(db, 'mockDataStore', id);
-    })
+    deleteByKey(db, 'mockDataStore', id);
 }

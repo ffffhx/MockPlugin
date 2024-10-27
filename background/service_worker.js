@@ -1,7 +1,7 @@
 // Manifest V2 版本
 // 在插件的背景页可以看得到控制台
 // Manifest V2 不支持 ES6 模块（如 import 和 export 语法）。
-// 每点击一个扩展程序就要执行一遍
+
 
 console.log('进入了service worker');
 
@@ -9,7 +9,12 @@ console.log('进入了service worker');
 let modifyResponseEnabled = false;
 
 // cachedMockData用于存放mock数据
-let cachedMockData = []
+let mockInfo = []
+
+// 声明一个全局的数据库对象
+let db
+
+
 
 // 注册一个监听器用于接受popup和content的消息
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
@@ -26,21 +31,25 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
 // 更新数据
 function updateData(db, storeName, data) {
-    const request = db.transaction([storeName], 'readwrite')
-        .objectStore(storeName)
-        .put(data);//没有就增加，有则更新
-    request.onsuccess = function (event) {
-        console.log('更新数据成功');
-    };
-    request.onerror = function (event) {
-        console.log('更新数据失败');
-    };
+    return new Promise((resolve, reject) => {
+        const request = db.transaction([storeName], 'readwrite')
+            .objectStore(storeName)
+            .put(data);//没有就增加，有则更新
+        request.onsuccess = function (event) {
+            console.log('更新数据成功');
+            resolve();
+        };
+        request.onerror = function (event) {
+            console.log('更新数据失败');
+            reject(event.target.error);
+        };
+    })
+
 }
 
 // 用于创建或者打开数据库的函数 第一个参数是数据库名称  第二个参数是表名称 第三个参数是版本号
 function openDB(dbName, storeName, version = 1) {
     return new Promise((resolve, reject) => {
-        let db
         // 打开数据库，如果没有那就创建
         const request = indexedDB.open(dbName, version);
         // 数据库打开成功的回调函数
@@ -75,7 +84,7 @@ function openDB(dbName, storeName, version = 1) {
 
 
 
-async function changeTimes(elementToEdit) {
+function changeTimes(elementToEdit) {
     let data = {
         urlId: elementToEdit.urlId,
         ifOpen: elementToEdit.ifOpen,
@@ -84,81 +93,109 @@ async function changeTimes(elementToEdit) {
         mockTimes: elementToEdit.mockTimes,
         responseData: elementToEdit.responseData,
     }
-    await openDB('mockDataBase', 'mockDataStore', 1).then((db) => {
-        db = db // 将数据库对象赋值给db
-        updateData(db, 'mockDataStore', data);//插入数据
+    updateData(db, 'mockDataStore', data);//更新数据
+}
+
+// 获取所有数据的函数
+function fetchAllData(db, storeName) {
+    return new Promise((resolve, reject) => {
+        const request = db.transaction([storeName], 'readwrite')
+            .objectStore(storeName)
+            .getAll();
+        request.onsuccess = function () {
+            const result = request.result; // 得到的所有数据
+            console.log(result, 'result');
+            mockInfo = result
+            resolve(mockInfo); // 返回获取的数据
+        };
+        request.onerror = function (event) {
+            reject('Failed to fetch data: ' + event.target.errorCode);
+        };
     });
 }
 
 
-// 预加载数据   把数据从IndexedDB中拿到cachedMockData
+
+
+// 预加载数据：这个函数的功能就是打开数据库，并且把数据拿出来
 const preloadDataFromIndexedDB = () => {
-    cachedMockData = []
-    const request = indexedDB.open('mockDataBase', 1);  //打开这个数据库
-    request.onsuccess = function (event) {  //打开成功之后执行的回调函数
-        const db = event.target.result;
-        const request = db.transaction('mockDataStore', 'readonly')  //   指定表格名称和操作格式 第一个参数是表名  第二个参数是操作模式
-            .objectStore('mockDataStore') //仓库对象  （表对象）
-            .getAll();
-        request.onsuccess = function () {
-            const result = request.result;   //得到的所有数据
-            result.forEach(item => {
-                cachedMockData.push(item)
-                console.log('cachedMockData预缓存成功', cachedMockData);
-
-                console.log('预缓存成功');
-
-            });
-
-        };
-    };
-    request.onerror = function (event) {
-        console.error('Failed to load data from IndexedDB:', event);
-    };
+    // 使用 openDB 函数
+    return openDB('mockDataBase', 'mockDataStore', 1)
+        .then(db => {
+            console.log('打开成功');
+            return fetchAllData(db, 'mockDataStore'); // 获取数据
+        })
+        .catch(error => {
+            console.error(error);
+        });
 };
 // 在插件启动时执行预加载
-preloadDataFromIndexedDB();
+chrome.runtime.onStartup.addListener(() => {
+    preloadDataFromIndexedDB();
+    console.log('刷新了页面');
+
+});
+// 在插件安装完成后执行预加载
+chrome.runtime.onInstalled.addListener(() => {
+    preloadDataFromIndexedDB();
+    console.log('刷新了页面');
+
+});
+// 在插件每次刷新页面的时候执行预加载
+chrome.tabs.onUpdated.addListener(
+    function (tabId, changeInfo, tab) {
+        if (changeInfo.status === 'complete') {
+            preloadDataFromIndexedDB();
+            console.log('刷新了页面');
+
+        }
+    }
+);
+
+
 
 // 拦截请求并返回 mock 数据
 chrome.webRequest.onBeforeRequest.addListener(
     (details) => {
+        console.log('检测到了请求');
 
+        // fetchAllData(db, 'mockDataStore');
         // 如果进行了拦截
         // if (modifyResponseEnabled) {
         const url = details.url;
         // 这些数据用的都是预缓存的数据，即cachedMockData
-        for (let i = 0; i < cachedMockData.length; i++) {
+        console.log('预缓存数据', mockInfo);
+
+        for (let i = 0; i < mockInfo.length; i++) {
+            console.log('预缓存数据', mockInfo);
+
             // 如果开启
-            if (cachedMockData[i].ifOpen) {
+            if (mockInfo[i].ifOpen) {
                 console.log('已开请求拦截功能');
-                if (cachedMockData[i].mockUrl === url) {
+                if (mockInfo[i].mockUrl === url) {
                     console.log('url正确');
-                    if (cachedMockData[i].mockTimes > 0) {
+                    if (mockInfo[i].mockTimes > 0) {
                         console.log('次数足够');
-                        cachedMockData[i].mockTimes--
-                        changeTimes(cachedMockData[i])
-                        console.log('拦截成功,剩余次数:', cachedMockData[i].mockTimes);
-                        preloadDataFromIndexedDB();
-                        // alert('拦截成功，剩余拦截次数' + cachedMockData[i].mockTimes);
+                        mockInfo[i].mockTimes--
+                        // changeTimes(mockInfo[i])
+                        console.log('拦截成功,剩余次数:', mockInfo[i].mockTimes);
+                        // alert('拦截成功，剩余拦截次数' + mockInfo[i].mockTimes);
                         // 然后要在数据库里面更新一下
                         return {
                             // data:application/json是 dataUrl的前缀，表示MIME类型
-                            // encodeURIComponent(cachedMockData[i].responseData)// 解释: 这里使用了 encodeURIComponent 来对数据进行 URL 编码，将数据中的特殊字符（例如空格、冒号、逗号等）转换为可以安全用于 URL 的格式。
-                            redirectUrl: 'data:application/json,' + encodeURIComponent(cachedMockData[i].responseData)
+                            // encodeURIComponent(mockInfo[i].responseData)// 解释: 这里使用了 encodeURIComponent 来对数据进行 URL 编码，将数据中的特殊字符（例如空格、冒号、逗号等）转换为可以安全用于 URL 的格式。
+                            redirectUrl: 'data:application/json,' + encodeURIComponent(mockInfo[i].responseData)
                         };
                     } else {
                         console.log('次数为0,请增加次数');
-                        preloadDataFromIndexedDB();
+                        // alert('次数为0,请增加次数');
                         return
                     }
                 }
             } else {
                 console.log('未开启该条请求的拦截');
-
             }
-
         }
-
         return {};  // 如果没有匹配项，继续正常请求
         // }
         // else {

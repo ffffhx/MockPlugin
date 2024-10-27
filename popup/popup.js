@@ -79,7 +79,6 @@ preloadDataFromIndexedDB();
 // 打开输入mock接口的弹窗的函数
 function openPopup() {
     document.querySelector('.popup').style.display = 'block';
-    console.log('执行了openUp');
 }
 
 
@@ -87,6 +86,12 @@ function openPopup() {
 // 关闭输入mock接口的弹窗的函数
 function cancelPopup() {
     document.querySelector('.popup').style.display = 'none';
+}
+
+// 将响应内容先清空然后添加到页面上
+function addResponseInnerHTML(element) {
+    liUpMockContentChange.innerHTML = '';
+    liUpMockContentChange.innerHTML = element.responseData
 }
 
 // 创建ul标签和li标签的函数
@@ -114,14 +119,8 @@ function createUlNdLi() {
         // 将ul添加到backMockInfo
         backMockInfo.appendChild(oneMockportUl);
 
-
-
-        // 将相应内容添加到页面上
-        function addResponseInnerHTML() {
-            liUpMockContentChange.innerHTML = '';
-            liUpMockContentChange.innerHTML = element.responseData
-        }
-        addResponseInnerHTML()
+        // 将响应内容先清空然后添加到页面上
+        addResponseInnerHTML(element)
 
         // 给详细按钮添加点击事件  点击之后给弹出的详情页的三个按钮也会添加点击事件
         oneMockportUl.querySelector('.operateLi').addEventListener('click', () => {
@@ -142,10 +141,7 @@ async function upDate(elementToEdit) {
         mockTimes: elementToEdit.mockTimes,
         responseData: elementToEdit.responseData,
     }
-    await openDB('mockDataBase', 'mockDataStore', 1).then((db) => {
-        db = db // 将数据库对象赋值给db
-        updateData(db, 'mockDataStore', data);//更新数据
-    });
+    updateData(db, 'mockDataStore', data);//更新数据
 }
 
 
@@ -160,10 +156,7 @@ async function addTimes(elementToEdit) {
         mockTimes: elementToEdit.mockTimes,
         responseData: elementToEdit.responseData,
     }
-    await openDB('mockDataBase', 'mockDataStore', 1).then((db) => {
-        db = db // 将数据库对象赋值给db
-        updateData(db, 'mockDataStore', data);//更新数据
-    });
+    updateData(db, 'mockDataStore', data);//更新数据
 }
 
 
@@ -173,9 +166,6 @@ async function addTimes(elementToEdit) {
 // 增加mock次数的函数
 function handleAddTimesClick() {
     addTimes(elementToEdit);
-    // 删除之后重新加载数组里面的东西
-    preloadDataFromIndexedDB().then(() => {
-    });
 }
 
 //  修改开启状态的函数
@@ -221,7 +211,7 @@ function savePopup() {
         alert('请规范填写所有字段');
         return
     } else {
-        // 插入数据
+        // 插入一条Mock数据
         addInsert()
         // 重新预加载数据
         preloadDataFromIndexedDB();
