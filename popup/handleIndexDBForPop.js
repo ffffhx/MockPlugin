@@ -6,7 +6,7 @@ class mockDbManager {
         this.storeName = storeName
         this.version = version
         this.db = null
-        // 实例化这个对象的时候打开数据库，并且用.then确保数据仓库打开成功
+        // openDB是异步的  preloadDataFromIndexedDB也是异步的
         this.openDB().then(() => {
             this.preloadDataFromIndexedDB()
             console.log('数据库已准备好使用', this.db);
